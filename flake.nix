@@ -23,7 +23,7 @@
         # Example build of your compositor crate:
         myCompositor = pkgs.rustPlatform.buildRustPackage {
           pname = "my-compositor";
-          version = "0.1.0";
+          version = "unstable";
 
           src = ./.;
 
