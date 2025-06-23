@@ -1,6 +1,5 @@
 {
-  description =
-    "A WIP Smithay-based Wayland compositor, inspired by AwesomeWM and configured in Lua or Rust";
+  description = "A WIP Smithay-based Wayland compositor, inspired by AwesomeWM and configured in Lua or Rust";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
@@ -20,30 +19,19 @@
         fenixPkgs = fenix.packages.${system};
         toolchain = fenixPkgs.stable;
         combinedToolchain = toolchain.completeToolchain;
-      in {
-        formatter = pkgs.nixfmt;
 
-        devShell = pkgs.mkShell {
+        # Example build of your compositor crate:
+        myCompositor = pkgs.rustPlatform.buildRustPackage {
+          pname = "my-compositor";
+          version = "0.1.0";
+
+          src = ./.;
+
+          cargoLock.lockFile = ./Cargo.lock;
+
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = with pkgs; [
-            # rust devel tools
-            combinedToolchain
-            rust-analyzer
-            cargo-outdated
-
-            # wlcs
-            (writeScriptBin "wlcs" ''
-              #!/bin/sh
-              ${wlcs}/libexec/wlcs/wlcs "$@"
-            '')
-
             wayland
-
-            # build time stuff
-            protobuf
-            lua54Packages.luarocks
-
-            # libs
             seatd.dev
             systemdLibs.dev
             libxkbcommon
@@ -51,8 +39,37 @@
             mesa
             xwayland
             libdisplay-info
+            protobuf
+          ];
+        };
+      in {
+        packages = {
+          default = myCompositor; # exposed as `#default`
+          my-compositor = myCompositor; # exposed as `#my-compositor`
+        };
 
-            # winit on x11
+        formatter = pkgs.nixfmt;
+
+        devShell = pkgs.mkShell {
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = with pkgs; [
+            combinedToolchain
+            rust-analyzer
+            cargo-outdated
+            (writeScriptBin "wlcs" ''
+              #!/bin/sh
+              ${wlcs}/libexec/wlcs/wlcs "$@"
+            '')
+            wayland
+            protobuf
+            lua54Packages.luarocks
+            seatd.dev
+            systemdLibs.dev
+            libxkbcommon
+            libinput
+            mesa
+            xwayland
+            libdisplay-info
             xorg.libXcursor
             xorg.libXrandr
             xorg.libXi
@@ -62,11 +79,10 @@
           runtimeDependencies = with pkgs; [
             wayland
             mesa
-            libglvnd # libEGL
+            libglvnd
           ];
 
-          LD_LIBRARY_PATH =
-            "${pkgs.wayland}/lib:${pkgs.libGL}/lib:${pkgs.libxkbcommon}/lib";
+          LD_LIBRARY_PATH = "${pkgs.wayland}/lib:${pkgs.libGL}/lib:${pkgs.libxkbcommon}/lib";
         };
       });
 }
